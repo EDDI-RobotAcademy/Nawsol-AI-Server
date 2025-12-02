@@ -10,6 +10,12 @@ from ieinfo.adapter.input.web.ie_info_router import ie_info_router
 from kftc.adapter.input.web.kftc_router import kftc_router
 from sosial_oauth.adapter.input.web.google_oauth2_router import authentication_router
 
+# ORM 모델들을 Base.metadata에 등록하기 위해 import, TODO: 기능 개발 후 삭제
+from ieinfo.infrastructure.orm.ie_info import IEInfo
+from product.infrastructure.orm.product_bond import ProductBondORM
+from product.infrastructure.orm.product_etf import ProductETFORM
+from product.infrastructure.orm.product_fund import ProductFundORM
+
 load_dotenv()
 
 from fastapi import FastAPI
