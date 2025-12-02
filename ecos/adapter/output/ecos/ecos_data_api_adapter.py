@@ -26,3 +26,20 @@ class EcosDataApiAdapter:
             source=EcosSource("ECOS_EXCHANGE_RATE"),
             fetched_at=Timestamp(datetime.now())
         )
+
+    async def get_interest_rate(self) -> EcosData:
+        raw_items = await self.client.get_interest_rate()
+        from ecos.domain.value_object.timestamp import Timestamp
+        items: List[EcosItem] = [
+            EcosItem(
+                item_type=item.get("ITEM_NAME1"),
+                time=item.get("TIME"),
+                value=item.get("DATA_VALUE")
+            )
+            for item in raw_items
+        ]
+        return EcosData(
+            items=items,
+            source=EcosSource("ECOS_EXCHANGE_RATE"),
+            fetched_at=Timestamp(datetime.now())
+        )

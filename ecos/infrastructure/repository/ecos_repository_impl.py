@@ -6,7 +6,9 @@ from sqlalchemy import func
 
 from ecos.application.port.ecos_repository_port import EcosRepositoryPort
 from ecos.domain.ecos import Ecos
+from ecos.domain.ecos_interest import EcosInterest
 from ecos.infrastructure.orm.exchange_rate import ExchangeRateORM
+from ecos.infrastructure.orm.interest_rate import InterestRateORM
 
 
 class EcosRepositoryImpl(EcosRepositoryPort):
@@ -58,7 +60,7 @@ class EcosRepositoryImpl(EcosRepositoryPort):
 
             erm_date_only = ecos.erm_date.date() if hasattr(ecos.erm_date, 'date') else ecos.erm_date
             
-            # 기존 레코드 조회 (exchange_type, erm_date, exchange_rate 모두 일치하는지 확인)
+            # 기존 레코드 조회 (exchange_type, erm_date 일치하는지 확인)
             # datetime을 날짜만 비교하기 위해 DATE() 함수 사용
             existing = self.db.query(ExchangeRateORM).filter(
                 and_(
@@ -92,4 +94,71 @@ class EcosRepositoryImpl(EcosRepositoryPort):
         for orm_item in orm_list:
             self.db.refresh(orm_item)
         
+        return ecos_list
+
+    async def save_interest_rate(self, ecos: EcosInterest) -> EcosInterest:
+        orm_interest_rate = InterestRateORM(
+            interest_type=ecos.interest_type,
+            interest_rate=ecos.interest_rate,
+            erm_date=ecos.erm_date,
+            created_at=ecos.created_at
+        )
+
+        self.db.add(orm_interest_rate)
+        self.db.commit()
+        self.db.refresh(orm_interest_rate)
+
+        # 도메인 엔티티에 id 업데이트 (필요한 경우)
+        return ecos
+
+    async def save_interest_rates_batch(self, ecos_list: List[EcosInterest]) -> List[EcosInterest]:
+        """
+        배치로 금리 데이터를 저장한다.
+        erm_date, interest_type, interest_rate가 동일한 레코드는 중복 저장하지 않는다.
+        """
+        if not ecos_list:
+            return []
+
+        # 중복 체크: 각 항목을 개별적으로 조회하여 정확한 비교 수행
+        new_ecos_list = []
+
+        for ecos in ecos_list:
+            # 날짜는 날짜 부분만 비교 (시간 제거)
+
+            erm_date_only = ecos.erm_date.date() if hasattr(ecos.erm_date, 'date') else ecos.erm_date
+
+            # 기존 레코드 조회 (interest_type, erm_date 일치하는지 확인)
+            # datetime을 날짜만 비교하기 위해 DATE() 함수 사용
+            existing = self.db.query(InterestRateORM).filter(
+                and_(
+                    InterestRateORM.interest_type == ecos.interest_type,
+                    # datetime을 날짜만 비교
+                    func.DATE(InterestRateORM.erm_date) == erm_date_only,
+                )
+            ).first()
+
+            # 중복이 없으면 추가
+            if not existing:
+                new_ecos_list.append(ecos)
+
+        if not new_ecos_list:
+            return ecos_list
+
+        # 새로운 항목만 ORM 객체로 변환
+        orm_list = [
+            InterestRateORM(
+                interest_type=ecos.interest_type,
+                interest_rate=ecos.interest_rate,
+                erm_date=ecos.erm_date,
+                created_at=ecos.created_at
+            )
+            for ecos in new_ecos_list
+        ]
+
+        self.db.add_all(orm_list)
+        self.db.commit()
+
+        for orm_item in orm_list:
+            self.db.refresh(orm_item)
+
         return ecos_list
