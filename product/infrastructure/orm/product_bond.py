@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import Column, String, BigInteger, DateTime, Integer, Float
 class ProductBondORM(Base):
     __tablename__ = "product_bond"
-    id = Column(String(255), primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     basDt = Column(DateTime, default=datetime.utcnow)       # 기준일자
     cmo = Column(String(255), nullable=True)                # 법인등록번호
     bondlsurNm = Column(String(255), nullable=True)         # 채권발행인명

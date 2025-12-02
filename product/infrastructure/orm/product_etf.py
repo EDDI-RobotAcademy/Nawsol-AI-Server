@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, BigInteger, DateTime, Integer, Float
 
 class ProductETFORM(Base):
     __tablename__ = "product_etf"
-    id = Column(String(255), primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     fltRt = Column(Float, nullable=True)               # 등락율
     mav = Column(Float, nullable=True)                 # 순자산가치(NAV)
     mkp = Column(Integer, nullable=True)               # 시가

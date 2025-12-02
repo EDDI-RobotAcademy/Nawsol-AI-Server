@@ -1,9 +1,9 @@
 from config.database.session import Base
 from datetime import datetime
-from sqlalchemy import Column, String, BigInteger, DateTime
+from sqlalchemy import Column, String, Integer, DateTime
 class ProductFundORM(Base):
     __tablename__ = "product_fund"
-    id = Column(String(255), primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     basDt = Column(DateTime, default=datetime.utcnow)       # 기준일자
     srtnCd = Column(String(255), nullable=True)             # 단축코드
     fndNm = Column(String(255), nullable=True)              # 펀드명
