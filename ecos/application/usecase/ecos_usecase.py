@@ -8,6 +8,7 @@ from ecos.domain.ecos_data import EcosData
 from ecos.domain.ecos_interest import EcosInterest
 from ecos.infrastructure.orm.exchange_rate import ExchangeType
 from util.log.log import Log
+from ecos.infrastructure.api.ecos_client import EcosClient
 
 logger = Log.get_logger()
 class FetchEcosUseCase:
@@ -18,7 +19,7 @@ class FetchEcosUseCase:
     async def get_exchange_rate(self) -> EcosData:
         return await self.adapter.get_exchange_rate()
 
-    async def fetch_and_save_exchange_rate(self) -> List[Ecos]:
+    async def fetch_and_save_exchange_rate(self, start:str, end:str) -> List[Ecos]:
         """
         ECOS API에서 환율 데이터를 조회하고 데이터베이스에 저장한다.
         
@@ -26,9 +27,8 @@ class FetchEcosUseCase:
             저장된 Ecos 도메인 엔티티 리스트
         """
         # 1. API에서 raw 데이터 조회
-        from ecos.infrastructure.api.ecos_client import EcosClient
         client = EcosClient()
-        raw_items = await client.get_exchange_rate()
+        raw_items = await client.get_exchange_rate(start, end)
         
         # 2. Raw 데이터를 Domain Entity로 변환
         ecos_entities = []
@@ -75,22 +75,21 @@ class FetchEcosUseCase:
     async def get_interest_rate(self) -> EcosData:
         return await self.adapter.get_interest_rate()
 
-    async def fetch_and_save_interest_rate(self) -> List[EcosInterest]:
+    async def fetch_and_save_interest_rate(self, start:str, end:str) -> List[EcosInterest]:
         """
         ECOS API에서 금리 데이터를 조회하고 데이터베이스에 저장한다.
 
         Returns:
-            저장된 Ecos 도메인 엔티티 리스트
+            저장된 EcosInterest 도메인 엔티티 리스트
         """
         # 1. API에서 raw 데이터 조회
-        from ecos.infrastructure.api.ecos_client import EcosClient
         client = EcosClient()
-        raw_items = await client.get_interest_rate()
+        raw_items = await client.get_interest_rate(start, end)
 
         # 2. Raw 데이터를 Domain Entity로 변환
         ecos_entities = []
         for item in raw_items:
-            item_code = item.get('ITEM_CODE1')
+            item_code = item.get('ITEM_NAME1')
             # TIME을 datetime으로 변환
             time_str = item.get('TIME')
             try:
@@ -107,9 +106,9 @@ class FetchEcosUseCase:
                 continue
 
             # Domain Entity 생성
-            ecos = Ecos(
-                exchange_type=item_code,
-                exchange_rate=interest_rate,
+            ecos = EcosInterest(
+                interest_type=item_code,
+                interest_rate=interest_rate,
                 erm_date=erm_date,
                 created_at=datetime.utcnow()
             )
