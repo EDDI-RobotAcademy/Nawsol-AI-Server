@@ -26,3 +26,7 @@ class EcosRepositoryPort(ABC):
     @abstractmethod
     async def save_interest_rates_batch(self, ecos_list: List[EcosInterest]) -> List[EcosInterest]:
         pass
+
+    @abstractmethod
+    def get_interest_rate_by_date(self, date: str) -> List[EcosInterest]:
+        pass

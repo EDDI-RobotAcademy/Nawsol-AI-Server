@@ -78,6 +78,9 @@ class FetchEcosUseCase:
     async def get_interest_rate(self) -> EcosData:
         return await self.adapter.get_interest_rate()
 
+    def get_interest_rate_by_date(self, date: str) -> List[EcosInterest]:
+        return self.repository.get_interest_rate_by_date(date)
+
     async def fetch_and_save_interest_rate(self, start:str, end:str) -> List[EcosInterest]:
         """
         ECOS API에서 금리 데이터를 조회하고 데이터베이스에 저장한다.

@@ -20,14 +20,20 @@ async def get_exchange_rate():
             } for item in result.items
         ]
     }
+@ecos_data_router.get("/exchange_rate_by_date/{date}")
+async def get_exchange_rate_db(date:str):
+    usecase = FetchEcosDataUsecaseFactory.create()
+    result = usecase.get_exchange_rate_by_date(date)
+    return result
 
+## API 호출 횟수 제한이 있으므로, 1년 단위 정도로 제한 할 것
 @ecos_data_router.post("/exchange_rate/save")
 async def fetch_and_save_exchange_rate(
         start:str | None = Body(None),
         end:str | None = Body(None)
 ):
     """
-    ECOS API에서 환율 데이터를 조회하고 데이터베이스에 저장합니다.
+    ECOS API에서 환율 데이터를 조회하고 데이터베이스에 저장한다.
     """
     usecase = FetchEcosDataUsecaseFactory.create()
     saved_entities = await usecase.fetch_and_save_exchange_rate(start, end)
@@ -63,12 +69,13 @@ async def get_interest_rate():
         ]
     }
 
-@ecos_data_router.get("/exchange_rate_by_date/{date}")
-async def get_exchange_rate_db(date:str):
+@ecos_data_router.get("/interest_rate_by_date/{date}")
+async def get_interest_rate_db(date:str):
     usecase = FetchEcosDataUsecaseFactory.create()
-    result = usecase.get_exchange_rate_by_date(date)
+    result = usecase.get_interest_rate_by_date(date)
     return result
 
+## API 호출 횟수 제한이 있으므로, 1년 단위 정도로 제한 할 것
 @ecos_data_router.post("/interest_rate/save")
 async def fetch_and_save_interest_rate(
         start:str | None = Body(None),

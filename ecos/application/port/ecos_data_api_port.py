@@ -16,3 +16,7 @@ class EcosDataApiPort(ABC):
     @abstractmethod
     async def get_interest_rate(self) -> List[EcosItem]:
         pass
+
+    @abstractmethod
+    def get_interest_rate_by_date(self, date: str) -> List[EcosItem]:
+        pass
