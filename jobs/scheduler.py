@@ -19,8 +19,10 @@ cron_bond_minute = os.getenv("CRON_FUND_MINUTE", "00")
 cron_fund_hour = os.getenv("CRON_BOND_HOUR", "03")
 cron_fund_minute = os.getenv("CRON_BOND_MINUTE", "00")
 
-cron_exchange_hour = os.getenv("CRON_EXCHANGE_HOUR", "03")
-cron_exchange_minute = os.getenv("CRON_EXCHANGE_MINUTE", "00")
+cron_exchange_hour = os.getenv("CRON_EXCHANGE_HOUR", "05")
+cron_exchange_minute = os.getenv("CRON_EXCHANGE_MINUTE", "30")
+cron_interest_hour = os.getenv("CRON_INTEREST_HOUR", "05")
+cron_interest_minute = os.getenv("CRON_INTEREST_MINUTE", "00")
 
 scheduler: AsyncIOScheduler | None = None
 
@@ -31,6 +33,9 @@ def create_scheduler():
         scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
         trigger = CronTrigger(hour=cron_exchange_hour, minute=cron_exchange_minute)
         scheduler.add_job(run_scheduler_ecos_exchange, trigger)
+
+        trigger = CronTrigger(hour=cron_interest_hour, minute=cron_interest_minute)
+        scheduler.add_job(run_scheduler_ecos_interest, trigger)
     return scheduler
 
 
@@ -53,4 +58,7 @@ async def run_scheduler_ecos_exchange():
     usecase = FetchEcosDataUsecaseFactory.create()
     await usecase.fetch_and_save_exchange_rate("", "")
 
-
+## 환율
+async def run_scheduler_ecos_interest():
+    usecase = FetchEcosDataUsecaseFactory.create()
+    await usecase.fetch_and_save_interest_rate("", "")
