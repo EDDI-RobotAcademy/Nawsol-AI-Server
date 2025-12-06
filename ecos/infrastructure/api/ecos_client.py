@@ -1,10 +1,8 @@
 import os
 from datetime import datetime, timedelta
-from math import ceil
 import aiohttp
 
 from ecos.infrastructure.orm.exchange_rate import ExchangeType
-
 
 class EcosClient:
     ECOS_BASE_URL = os.getenv("ECOS_BASE_URL")
@@ -13,6 +11,7 @@ class EcosClient:
     ECOS_EXCHANGE_SERVICE_KEY = os.getenv("ECOS_EXCHANGE_SERVICE_KEY")
     ECOS_INTEREST_SERVICE_KEY = os.getenv("ECOS_INTEREST_SERVICE_KEY")
 
+    ## 환율
     async def get_exchange_rate(self, start: str = None, end: str = None) -> list[dict]:
         if start and end:
             yesterday = datetime.strptime(start, "%Y%m%d").strftime("%Y%m%d")
@@ -43,6 +42,7 @@ class EcosClient:
 
         return results
 
+    ## 금리
     async def get_interest_rate(self, start:str = None, end:str = None) -> list[dict]:
         if start is not None and end is not None:
             yesterday = datetime.strptime(start, "%Y%m%d").strftime("%Y%m%d")

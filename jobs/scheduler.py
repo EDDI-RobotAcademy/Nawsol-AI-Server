@@ -1,22 +1,56 @@
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 import asyncio
 import os
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
+
+from util.log.log import Log
+
+logger = Log.get_logger()
+from ecos.application.factory.fetch_ecos_data_usecase_factory import FetchEcosDataUsecaseFactory
 
 load_dotenv()
 
-async def run_scheduler_etf():
-    print("TEST")
+cron_etf_hour = os.getenv("CRON_ETF_HOUR", "03")
+cron_etf_minute = os.getenv("CRON_ETF_MINUTE", "00")
+cron_bond_hour = os.getenv("CRON_FUND_HOUR", "03")
+cron_bond_minute = os.getenv("CRON_FUND_MINUTE", "00")
+cron_fund_hour = os.getenv("CRON_BOND_HOUR", "03")
+cron_fund_minute = os.getenv("CRON_BOND_MINUTE", "00")
 
-async def main():
-    scheduler = AsyncIOScheduler()
-    cron_etf_hour = os.getenv("CRON_ETF_HOUR", "03")
-    cron_etf_minute = os.getenv("CRON_ETF_MINUTE", "00")
-    trigger = CronTrigger(hour=cron_etf_hour, minute=cron_etf_minute, timezone="Asia/Seoul")
-    scheduler.add_job(run_scheduler_etf, trigger)
-    scheduler.start()
-    await asyncio.Event().wait()
+cron_exchange_hour = os.getenv("CRON_EXCHANGE_HOUR", "03")
+cron_exchange_minute = os.getenv("CRON_EXCHANGE_MINUTE", "00")
 
-if __name__ == "__main__":
-    asyncio.run(main())
+scheduler: AsyncIOScheduler | None = None
+
+
+def create_scheduler():
+    global scheduler
+    if scheduler is None:
+        scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
+        trigger = CronTrigger(hour=cron_exchange_hour, minute=cron_exchange_minute)
+        scheduler.add_job(run_scheduler_ecos_exchange, trigger)
+    return scheduler
+
+
+def start_scheduler():
+    sched = create_scheduler()
+    if not sched.running:
+        sched.start()
+        logger.info("Scheduler started")
+
+
+def stop_scheduler():
+    global scheduler
+    if scheduler and scheduler.running:
+        scheduler.shutdown(wait=False)
+        logger.info("Scheduler stopped")
+
+
+## 환율
+async def run_scheduler_ecos_exchange():
+    usecase = FetchEcosDataUsecaseFactory.create()
+    await usecase.fetch_and_save_exchange_rate("", "")
+
+
