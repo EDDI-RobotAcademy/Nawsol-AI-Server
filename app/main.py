@@ -1,9 +1,10 @@
 import os
-import asyncio
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
+from product.adapter.input.web.product_data_router.product_data_router import product_data_router
 from account.adapter.input.web.account_router import account_router
 from config.database.session import Base, engine
 from documents_multi_agents.adapter.input.web.document_multi_agent_router import documents_multi_agents_router
@@ -54,6 +55,7 @@ app.include_router(documents_multi_agents_router, prefix="/flow")  # 프론트�
 app.include_router(kftc_router, prefix="/kftc")
 app.include_router(ecos_data_router, prefix="/ecos")
 app.include_router(ie_info_router, prefix="/ie_info")
+app.include_router(product_data_router, prefix="/product")
 # 앱 실행
 
 if __name__ == "__main__":
