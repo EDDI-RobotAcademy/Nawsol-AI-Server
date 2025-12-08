@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 
+from finance.adapter.input.web.finance_router import finance_router
 from market_data.adapter.input.web.market_data_router import market_data_router
 
 load_dotenv()
@@ -20,7 +21,6 @@ from jobs import scheduler as jobs_scheduler
 from ieinfo.infrastructure.orm.ie_info import IEInfo
 from product.infrastructure.orm.product_bond import ProductBondORM
 from product.infrastructure.orm.product_fund import ProductFundORM
-from finance.infrastructure.orm.finance_orm import FinanceORM
 
 
 from fastapi import FastAPI
@@ -58,6 +58,7 @@ app.include_router(ecos_data_router, prefix="/ecos")
 app.include_router(ie_info_router, prefix="/ie_info")
 app.include_router(product_data_router, prefix="/product")
 app.include_router(market_data_router, prefix="/market-data")
+app.include_router(finance_router, prefix="/finance")
 # 앱 실행
 
 if __name__ == "__main__":
