@@ -10,6 +10,7 @@ from sqlalchemy import func
 from config.database.session import get_db_session
 from product.domain.product_etf import ProductEtf
 from product.infrastructure.orm.product_etf import ProductETFORM
+from product.infrastructure.orm.product_fund import ProductFundORM
 
 
 class ProductRepositoryImpl(ProductRepositoryPort):
@@ -111,3 +112,22 @@ class ProductRepositoryImpl(ProductRepositoryPort):
             self.db.refresh(orm_item)
 
         return etf_list
+
+    async def get_fund_data_by_date(self, date:str) -> List[ProductFundORM]:
+        rows = (self.db.query(ProductFundORM).
+                filter(func.date_format(ProductFundORM.basDt, "%Y%m%d") == date).
+                all())
+        return [
+            ProductFundORM(
+                id=row.id,
+                baseDt = row.baseDt,
+                srtnCd = row.srtnCd,
+                fndNm = row.fndNm,
+                ctg = row.ctg,
+                setpDt = row.setpDt,
+                fndTp = row.fndTp,
+                prdClsfCd = row.prdClsfCd,
+                asoStdCd = row.asoStdCd,
+            )
+            for row in rows
+        ]

@@ -6,6 +6,7 @@ from product.domain.product_etf import ProductEtf
 from product.domain.product_etf_data import ProductEtfData
 from product.infrastructure.api.data_go_client import DataGoClient
 from product.infrastructure.orm.product_etf import ProductETFORM
+from product.infrastructure.orm.product_fund import ProductFundORM
 
 from util.log.log import Log
 
@@ -49,3 +50,6 @@ class FetchProductUseCase:
             await self.repository.save_etf_batch(etf_entities)
 
         return etf_entities
+
+    async def get_fund_data_by_date(self, date:str) -> List[ProductFundORM]:
+        return await self.repository.get_fund_data_by_date(date)

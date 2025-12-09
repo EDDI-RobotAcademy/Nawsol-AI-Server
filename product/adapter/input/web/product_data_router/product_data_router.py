@@ -69,3 +69,9 @@ async def fetch_and_save_etf():
             } for entity in saved_entities
         ]
     }
+
+@product_data_router.get("/fund/{date}")
+async def get_fund_info(date:str):
+    usecase = FetchProductDataUsecaseFactory.create()
+    result = await usecase.get_fund_data_by_date(date)
+    return result
