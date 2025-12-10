@@ -112,6 +112,30 @@ class ProductRepositoryImpl(ProductRepositoryPort):
 
         return etf_list
 
+    def get_all_etf(self, limit: int = 50) -> List[ProductETFORM]:
+        """
+        ETF 상품 목록 조회
+        
+        Args:
+            limit: 조회할 최대 개수
+        
+        Returns:
+            ETF 상품 리스트
+        """
+        try:
+            # 최신 데이터 기준으로 정렬하여 조회
+            etf_list = self.db.query(ProductETFORM).order_by(
+                ProductETFORM.basDt.desc(),
+                ProductETFORM.mrktTotAmt.desc()  # 시가총액 큰 순서
+            ).limit(limit).all()
+            
+            return etf_list
+        except Exception as e:
+            from util.log.log import Log
+            logger = Log.get_logger()
+            logger.error(f"Failed to get ETF list: {str(e)}")
+            return []
+
     async def get_fund_data_by_date(self, date:str) -> List[ProductFundORM]:
         rows = (self.db.query(ProductFundORM).
                 filter(func.date_format(ProductFundORM.basDt, "%Y%m%d") == date).

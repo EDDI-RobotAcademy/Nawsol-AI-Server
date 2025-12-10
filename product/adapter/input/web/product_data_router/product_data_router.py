@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Body
 
 from product.application.factory.fetch_product_data_usecase_factory import FetchProductDataUsecaseFactory
+from util.log.log import Log
+
+logger = Log.get_logger()
 
 product_data_router = APIRouter(tags=["product"])
 @product_data_router.get("/etf")
