@@ -1,18 +1,19 @@
 import os
 from datetime import datetime, timedelta
-from math import ceil
 import aiohttp
 
 from ecos.infrastructure.orm.exchange_rate import ExchangeType
 
-
 class EcosClient:
-    ECOS_BASE_URL = os.getenv("ECOS_BASE_URL")
-    ECOS_RATE_URL = os.getenv("ECOS_RATE_URL")
-    ECOS_API_KEY = os.getenv("ECOS_API_KEY")
-    ECOS_EXCHANGE_SERVICE_KEY = os.getenv("ECOS_EXCHANGE_SERVICE_KEY")
-    ECOS_INTEREST_SERVICE_KEY = os.getenv("ECOS_INTEREST_SERVICE_KEY")
 
+    def __init__(self):
+        self.base_url = os.getenv("ECOS_BASE_URL")
+        self.rate_url = os.getenv("ECOS_RATE_URL")
+        self.api_key = os.getenv("ECOS_API_KEY")
+        self.exchange_key = os.getenv("ECOS_EXCHANGE_SERVICE_KEY")
+        self.interest_key = os.getenv("ECOS_INTEREST_SERVICE_KEY")
+
+    ## 환율
     async def get_exchange_rate(self, start: str = None, end: str = None) -> list[dict]:
         if start and end:
             yesterday = datetime.strptime(start, "%Y%m%d").strftime("%Y%m%d")
@@ -25,9 +26,9 @@ class EcosClient:
 
         async with aiohttp.ClientSession() as session:
             base_url = (
-                f"{self.ECOS_BASE_URL}/{self.ECOS_RATE_URL}/"
-                f"{self.ECOS_API_KEY}/json/kr/1/100000/"
-                f"{self.ECOS_EXCHANGE_SERVICE_KEY}/D/"
+                f"{self.base_url}/{self.rate_url}/"
+                f"{self.api_key}/json/kr/1/100000/"
+                f"{self.exchange_key}/D/"
                 f"{yesterday}/{today}"
             )
 
@@ -43,6 +44,7 @@ class EcosClient:
 
         return results
 
+    ## 금리
     async def get_interest_rate(self, start:str = None, end:str = None) -> list[dict]:
         if start is not None and end is not None:
             yesterday = datetime.strptime(start, "%Y%m%d").strftime("%Y%m%d")
@@ -55,9 +57,9 @@ class EcosClient:
 
         async with aiohttp.ClientSession() as session:
             url = (
-                f"{self.ECOS_BASE_URL}/{self.ECOS_RATE_URL}/"
-                f"{self.ECOS_API_KEY}/json/kr/1/100000/"
-                f"{self.ECOS_INTEREST_SERVICE_KEY}/D/"
+                f"{self.base_url}/{self.rate_url}/"
+                f"{self.api_key}/json/kr/1/100000/"
+                f"{self.interest_key}/D/"
                 f"{yesterday}/{today}"
             )
 
