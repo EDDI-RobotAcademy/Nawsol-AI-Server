@@ -1,4 +1,3 @@
-import json
 import os
 import uuid
 from fastapi import APIRouter
@@ -10,7 +9,6 @@ from config.redis_config import get_redis
 from kakao_authentication.application.usecase.kakao_oauth_usecase import KakaoOAuthUseCase
 from kakao_authentication.infrastructure.client.kakao_oauth_client import KakaoOAuthClient
 from util.log.log import Log
-from util.security.crsf import generate_csrf_token, CSRF_COOKIE_NAME
 
 kakao_authentication_router = APIRouter()
 
@@ -70,7 +68,7 @@ async def kakao_redirect(code: str):
 
     logger.debug("CSRF token generated")
     # 브라우저 쿠키 발급
-    response = RedirectResponse("http://localhost:3000")
+    response = RedirectResponse(CORS_ALLOWED_FRONTEND_URL)
     response.set_cookie(
         key="session_id",
         value=session_id,
