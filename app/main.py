@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from finance.adapter.input.web.finance_router import finance_router
 from kakao_authentication.adapter.input.web.kakao_authentication_router import kakao_authentication_router
 from market_data.adapter.input.web.market_data_router import market_data_router
+from recommendation.adapter.input.web.etf_recommendation_router import etf_recommendation_router
 
 load_dotenv()
 
@@ -16,6 +17,7 @@ from ecos.adapter.input.web.ecos_data_router.ecos_data_router import ecos_data_r
 from ieinfo.adapter.input.web.ie_info_router import ie_info_router
 from kftc.adapter.input.web.kftc_router import kftc_router
 from sosial_oauth.adapter.input.web.google_oauth2_router import authentication_router
+from recommendation.adapter.input.web.etf_recommendation_router import etf_recommendation_router
 from news_info.adapter.input.web.news_info_router import news_info_router
 from jobs import scheduler as jobs_scheduler
 
@@ -62,6 +64,7 @@ app.include_router(ie_info_router, prefix="/ie_info")
 app.include_router(product_data_router, prefix="/product")
 app.include_router(market_data_router, prefix="/market-data")
 app.include_router(finance_router, prefix="/finance")
+app.include_router(etf_recommendation_router, prefix="/etf-recommendation")
 app.include_router(news_info_router, prefix="/news_info")
 app.include_router(kakao_authentication_router, prefix="/kakao-authentication")
 

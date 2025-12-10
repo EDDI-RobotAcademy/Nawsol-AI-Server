@@ -28,22 +28,25 @@ class FetchProductUseCase:
         raw_items = await client.get_etf_data()
         etf_entities = []
         for item in raw_items:
+            # 필드명 매핑 (API 응답 필드명 -> 모델 필드명)
+            # itmsNm: 종목명, vs: 대비, fltRt: 등락률, mkp: 시가, hipr: 고가, lopr: 저가
+            # clpr: 종가, trqu: 거래량, trPrc: 거래대금, lstgStCnt: 상장주식수, mrktTotAmt: 시가총액
             etfs = ProductEtf(
-                fltRt=item.get("fltRt"),
-                nav=item.get("nav"),
-                mkp=item.get("mkp"),
-                hipr=item.get("hipr"),
-                lopr=item.get("lopr"),
-                trqu=item.get("trqu"),
-                trPrc=item.get("trPrc"),
-                mrktTotAmt=item.get("mrktTotAmt"),
-                nPptTotAmt=item.get("nPptTotAmt"),
-                stLstgCnt=item.get("stLstgCnt"),
-                bssIdxIdxNm=item.get("bssIdxIdxNm"),
-                bssIdxClpr=item.get("bssIdxClpr"),
-                basDt=item.get("basDt"),
-                clpr=item.get("clpr"),
-                vs=item.get("vs")
+                fltRt=item.get("fltRt"),  # 등락률
+                nav=item.get("nav"),  # NAV (없을 수 있음)
+                mkp=item.get("mkp"),  # 시가
+                hipr=item.get("hipr"),  # 고가
+                lopr=item.get("lopr"),  # 저가
+                trqu=item.get("trqu"),  # 거래량
+                trPrc=item.get("trPrc"),  # 거래대금
+                mrktTotAmt=item.get("mrktTotAmt"),  # 시가총액
+                nPptTotAmt=item.get("nPptTotAmt"),  # 순자산총액 (없을 수 있음)
+                stLstgCnt=item.get("lstgStCnt") or item.get("stLstgCnt"),  # 상장주식수
+                bssIdxIdxNm=item.get("itmsNm"),  # 종목명
+                bssIdxClpr=item.get("bssIdxClpr"),  # 기초지수종가 (없을 수 있음)
+                basDt=item.get("basDt"),  # 기준일자
+                clpr=item.get("clpr"),  # 종가
+                vs=item.get("vs")  # 대비
             )
             etf_entities.append(etfs)
         if etf_entities:
