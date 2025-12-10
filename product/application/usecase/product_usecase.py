@@ -28,6 +28,9 @@ class FetchProductUseCase:
         raw_items = await client.get_etf_data(start, end)
         etf_entities = []
         for item in raw_items:
+            # 필드명 매핑 (API 응답 필드명 -> 모델 필드명)
+            # itmsNm: 종목명, vs: 대비, fltRt: 등락률, mkp: 시가, hipr: 고가, lopr: 저가
+            # clpr: 종가, trqu: 거래량, trPrc: 거래대금, lstgStCnt: 상장주식수, mrktTotAmt: 시가총액
             etfs = ProductEtf(
                 fltRt=item.get("fltRt"),
                 nav=item.get("nav"),
