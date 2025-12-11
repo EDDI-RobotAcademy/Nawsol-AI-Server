@@ -83,9 +83,12 @@ async def get_fund_info(date:str):
     return result
 
 @product_data_router.post("/fund/save")
-async def fetch_and_save_fund():
+async def fetch_and_save_fund(
+        start:str | None = Body(None),
+        end:str | None = Body(None)
+):
     usecase = FetchProductDataUsecaseFactory.create()
-    saved_entities = await usecase.fetch_and_save_fund_data()
+    saved_entities = await usecase.fetch_and_save_fund_data(start, end)
 
     return {
         "message": "FUND 정보가 성공적으로 저장되었습니다.",
@@ -112,9 +115,12 @@ async def get_bond_info(date:str):
     return result
 
 @product_data_router.post("/bond/save")
-async def fetch_and_save_bond():
+async def fetch_and_save_bond(
+        start: str | None = Body(None),
+        end: str | None = Body(None)
+):
     usecase = FetchProductDataUsecaseFactory.create()
-    saved_entities = await usecase.fetch_and_save_bond_data()
+    saved_entities = await usecase.fetch_and_save_bond_data(start, end)
 
     return {
         "message": "BOND 정보가 성공적으로 저장되었습니다.",
