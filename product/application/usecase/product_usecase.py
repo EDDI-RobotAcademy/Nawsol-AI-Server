@@ -59,25 +59,7 @@ class FetchProductUseCase:
 
     async def get_fund_data_by_date(self, date:str) -> List[ProductFundORM]:
 
-        client = DataGoClient()
-        raw_items = await client.get_fund_data()
-        fund_entities = []
-        for item in raw_items:
-            funds = ProductFund(
-                basDt=item.get("basDt"),
-                srtnCd=item.get("srtnCd"),
-                fndNm=item.get("fndNm"),
-                ctg=item.get("ctg"),
-                setpDt=item.get("setpDt"),
-                fndTp=item.get("fndTp"),
-                prdClsfCd=item.get("prdClsfCd"),
-                asoStdCd=item.get("asoStdCd")
-            )
-            fund_entities.append(funds)
-        if fund_entities:
-            await self.repository.get_fund_data_by_date(date)
-
-        return fund_entities
+        return await self.repository.get_fund_data_by_date(date)
 
     async def fetch_and_save_fund_data(self, start:str, end:str) -> List[ProductFund]:
         client = DataGoClient()
@@ -91,7 +73,7 @@ class FetchProductUseCase:
             while current_date <= end_date:
                 today = current_date.strftime("%Y%m%d")
 
-                raw_items = client.get_fund_data(today)
+                raw_items = await client.get_fund_data(today)
                 fund_entities = []
 
                 for item in raw_items:
@@ -137,37 +119,7 @@ class FetchProductUseCase:
 
     async def get_bond_data_by_date(self, date:str) -> List[ProductBondORM]:
 
-        client = DataGoClient()
-        raw_items = await client.get_bond_data()
-        bond_entities = []
-        for item in raw_items:
-            bonds = ProductBond(
-                basDt = item.get("basDt"),
-                crno = item.get("crno"),
-                bondIsurNm = item.get("bondIsurNm"),
-                bondIssuDt = item.get("bondIssuDt"),
-                scrsItmsKcd = item.get("scrsItmsKcd"),
-                scrsItmsKcdNm = item.get("scrsItmsKcdNm"),
-                isinCd = item.get("isinCd"),
-                isinCdNm = item.get("isinCdNm"),
-                bondIssuFrmtNm = item.get("bondIssuFrmtNm"),
-                bondExprDt = item.get("bondExprDt"),
-                bondIssuCurCd = item.get("bondIssuCurCd"),
-                bondIssuCurCdNm = item.get("bondIssuCurCdNm"),
-                bondPymtAmt = item.get("bondPymtAmt"),
-                bondIssuAmt = item.get("bondIssuAmt"),
-                bondSrfcInrt = item.get("bondSrfcInrt"),
-                irtChngDcd = item.get("irtChngDcd"),
-                irtChngDcdNm = item.get("irtChngDcdNm"),
-                bondIntTcd = item.get("bondIntTcd"),
-                bondIntTcdNm = item.get("bondIntTcdNm")
-
-            )
-            bond_entities.append(bonds)
-        if bond_entities:
-            await self.repository.get_bond_data_by_date(date)
-
-        return bond_entities
+        return await self.repository.get_bond_data_by_date(date)
 
     async def fetch_and_save_bond_data(self, start:str, end:str) -> List[ProductBond]:
         client = DataGoClient()
