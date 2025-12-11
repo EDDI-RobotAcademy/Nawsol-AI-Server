@@ -5,6 +5,7 @@ from product.application.port.product_repository_port import ProductRepositoryPo
 from product.domain.product_bond_data import ProductBondData
 from product.domain.product_etf import ProductEtf
 from product.domain.product_fund import ProductFund
+from product.domain.product_fund_data import ProductFundData
 from product.domain.product_bond import ProductBond
 from product.domain.product_etf_data import ProductEtfData
 from datetime import datetime, timedelta
@@ -58,11 +59,15 @@ class FetchProductUseCase:
 
         return etf_entities
 
+    async def get_fund_data(self) -> ProductFundData:
+        return await self.adapter.get_fund_data()
+      
     async def get_bond_data(self) -> ProductBondData:
         return await self.adapter.get_bond_data()
 
     async def get_fund_data_by_date(self, date:str) -> List[ProductFundORM]:
 
+    async def get_fund_data_by_date(self, date:str) -> List[ProductFundORM]:
         return await self.repository.get_fund_data_by_date(date)
 
     async def fetch_and_save_fund_data(self, start:str, end:str) -> List[ProductFund]:
