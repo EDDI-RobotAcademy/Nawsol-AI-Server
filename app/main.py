@@ -17,6 +17,7 @@ from ieinfo.adapter.input.web.ie_info_router import ie_info_router
 from kftc.adapter.input.web.kftc_router import kftc_router
 from sosial_oauth.adapter.input.web.google_oauth2_router import authentication_router
 from recommendation.adapter.output.web.etf_recommendation_router import etf_recommendation_router
+from recommendation.adapter.output.web.fund_recommendation_router import fund_recommendation_router
 from recommendation.adapter.output.web.bond_recommendation_router import bond_recommendation_router
 from news_info.adapter.input.web.news_info_router import news_info_router
 from jobs import scheduler as jobs_scheduler
@@ -59,6 +60,7 @@ app.include_router(product_data_router, prefix="/product")
 app.include_router(market_data_router, prefix="/market-data")
 app.include_router(finance_router, prefix="/finance")
 app.include_router(etf_recommendation_router, prefix="/etf-recommendation")
+app.include_router(fund_recommendation_router, prefix="/fund-recommendation")
 app.include_router(bond_recommendation_router, prefix="/bond-recommendation")
 app.include_router(news_info_router, prefix="/news_info")
 app.include_router(kakao_authentication_router, prefix="/kakao-authentication")
