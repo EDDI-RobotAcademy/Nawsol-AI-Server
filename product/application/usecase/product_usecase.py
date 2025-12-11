@@ -2,6 +2,7 @@ from typing import List
 
 from product.adapter.output.product.product_data_api_adapter import ProductDataApiAdapter
 from product.application.port.product_repository_port import ProductRepositoryPort
+from product.domain.product_bond_data import ProductBondData
 from product.domain.product_etf import ProductEtf
 from product.domain.product_fund import ProductFund
 from product.domain.product_bond import ProductBond
@@ -56,6 +57,9 @@ class FetchProductUseCase:
             await self.repository.save_etf_batch(etf_entities)
 
         return etf_entities
+
+    async def get_bond_data(self) -> ProductBondData:
+        return await self.adapter.get_bond_data()
 
     async def get_fund_data_by_date(self, date:str) -> List[ProductFundORM]:
 

@@ -293,3 +293,26 @@ class ProductRepositoryImpl(ProductRepositoryPort):
 
         return bond_list
 
+    def get_all_bond(self, limit: int = 50) -> List[ProductBondORM]:
+        """
+        채권 상품 목록 조회
+
+        Args:
+            limit: 조회할 최대 개수
+
+        Returns:
+            ETF 상품 리스트
+        """
+        try:
+            # 최신 데이터 기준으로 정렬하여 조회
+            bond_list = self.db.query(ProductBondORM).order_by(
+                ProductBondORM.basDt.desc(),
+                ProductBondORM.bondIssuAmt.desc()  # 채권발행금액 큰 순서
+            ).limit(limit).all()
+
+            return bond_list
+        except Exception as e:
+            from util.log.log import Log
+            logger = Log.get_logger()
+            logger.error(f"Failed to get Bond list: {str(e)}")
+            return []
