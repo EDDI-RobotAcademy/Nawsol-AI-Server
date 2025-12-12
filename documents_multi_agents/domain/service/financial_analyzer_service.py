@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import traceback
 from typing import Dict, Any
 
 from dotenv import load_dotenv
@@ -8,6 +9,7 @@ from openai import OpenAI
 
 from util.cache.ai_cache import AICache
 from util.log.log import Log
+from documents_multi_agents.domain.service.hybrid_parser import HybridParser
 
 load_dotenv()
 logger = Log.get_logger()
@@ -116,10 +118,77 @@ class FinancialAnalyzerService:
         cached_response = AICache.get_cached_response(cache_key)
         if cached_response:
             try:
+                logger.info("[CACHE HIT] 소득 분류 캐시 사용")
                 return json.loads(cached_response)
             except json.JSONDecodeError:
                 logger.warning("[CACHE] Failed to parse cached income data, re-analyzing")
 
+        # ============================================
+        # 🆕 하이브리드 파싱 (규칙 기반 우선)
+        # ============================================
+        logger.info(f"\n{'='*80}")
+        logger.info(f"📊 [HYBRID PARSING START] 소득 항목 분류 시작 ({len(income_items)}개 항목)")
+        logger.info(f"{'='*80}")
+        
+        try:
+            hybrid_parser = HybridParser()  # ✏️ confidence_threshold 제거
+        except Exception as e:
+            logger.error(f"❌ [HYBRID PARSER] 초기화 실패: {str(e)}")
+            logger.error(f"   스택: {traceback.format_exc()}")
+            # 폴백: GPT만 사용
+            hybrid_parser = None
+        
+        confident_items = {}  # 규칙 기반 성공
+        uncertain_items = {}  # GPT 필요
+        
+        if hybrid_parser:
+            for field_name, value in income_items.items():
+                try:
+                    trans_type, category, metadata = hybrid_parser.classify_item(
+                        field_name, 
+                        value, 
+                        doc_type_hint='소득'
+                    )
+                    
+                    if metadata['method'] == 'rule_based':
+                        # ✅ 규칙 기반 성공
+                        confident_items[field_name] = value
+                    else:
+                        # ⚠️ GPT 필요
+                        uncertain_items[field_name] = value
+                except Exception as e:
+                    logger.warning(f"⚠️  [PARSE ERROR] '{field_name}' 파싱 실패: {str(e)}")
+                    uncertain_items[field_name] = value
+            
+            # 📊 통계 출력
+            try:
+                stats = hybrid_parser.get_statistics()
+                logger.info(f"\n📊 [PARSING STATS]")
+                logger.info(f"   전체: {stats['total_items']}개")
+                logger.info(f"   ✅ DB 규칙 성공: {stats['db_rule_success']}개 ({stats['db_rule_rate']*100:.1f}%)")
+                logger.info(f"   ⚠️  GPT 필요: {stats['gpt_fallback']}개 ({stats['gpt_fallback_rate']*100:.1f}%)")
+                logger.info(f"   💰 비용 절감률: {stats['cost_saving_rate']*100:.1f}%")
+                logger.info(f"   🎓 새로 학습: {stats['new_keywords_learned']}개")
+            except Exception as e:
+                logger.warning(f"⚠️  통계 출력 실패: {str(e)}")
+        else:
+            # HybridParser 실패 시 모든 항목을 GPT로
+            logger.warning("⚠️  HybridParser를 사용할 수 없습니다. 모든 항목을 GPT로 처리합니다.")
+            uncertain_items = income_items.copy()
+        
+        # ============================================
+        # GPT로 전체 재분석 (불확실한 항목 포함)
+        # ============================================
+        if uncertain_items:
+            logger.warning(f"\n⚠️  [{len(uncertain_items)}개 항목] GPT로 재분석 필요:")
+            for field in uncertain_items.keys():
+                logger.warning(f"   - {field}")
+            logger.info(f"\n🤖 [GPT PARSING] 전체 항목을 GPT로 분석합니다...")
+        else:
+            logger.info(f"\n✅ [100% DB-RULE] 모든 항목을 규칙 기반으로 처리했습니다!")
+            logger.info(f"🤖 [GPT PARSING] 정확도 향상을 위해 GPT로 카테고리 분류를 진행합니다...")
+
+        # 기존 GPT 프롬프트 사용 (전체 항목)
         prompt = f"""
 다음 소득 항목들을 분석하여 아래 카테고리로 정확하게 분류해줘:
 
@@ -201,6 +270,14 @@ class FinancialAnalyzerService:
                 # 언더스코어를 띄어쓰기로 변환
                 cleaned_result = self._clean_item_names(result)
                 
+                # 🎓 GPT 학습: 불확실했던 항목들을 DB에 저장
+                if uncertain_items:
+                    self._learn_from_gpt_income(uncertain_items, cleaned_result)
+                
+                # ✅ GPT 분석 완료 로깅
+                logger.info(f"\n✅ [GPT COMPLETED] 소득 분류 완료")
+                logger.info(f"{'='*80}\n")
+                
                 # 🔥 캐시 저장 (24시간)
                 AICache.set_cached_response(cache_key, json.dumps(cleaned_result, ensure_ascii=False), ttl=86400)
                 
@@ -252,10 +329,78 @@ class FinancialAnalyzerService:
         cached_response = AICache.get_cached_response(cache_key)
         if cached_response:
             try:
+                logger.info("[CACHE HIT] 지출 분류 캐시 사용")
                 return json.loads(cached_response)
             except json.JSONDecodeError:
                 logger.warning("[CACHE] Failed to parse cached expense data, re-analyzing")
 
+        # ============================================
+        # 🆕 하이브리드 파싱 (규칙 기반 우선)
+        # ============================================
+        logger.info(f"\n{'='*80}")
+        logger.info(f"📊 [HYBRID PARSING START] 지출 항목 분류 시작 ({len(expense_items)}개 항목)")
+        logger.info(f"{'='*80}")
+        
+        try:
+            hybrid_parser = HybridParser()  # ✏️ confidence_threshold 제거
+        except Exception as e:
+            logger.error(f"❌ [HYBRID PARSER] 초기화 실패: {str(e)}")
+            logger.error(f"   스택: {traceback.format_exc()}")
+            # 폴백: GPT만 사용
+            hybrid_parser = None
+        
+        confident_items = {}  # 규칙 기반 성공
+        uncertain_items = {}  # GPT 필요
+        
+        if hybrid_parser:
+            for field_name, value in expense_items.items():
+                try:
+                    trans_type, category, metadata = hybrid_parser.classify_item(
+                        field_name, 
+                        value, 
+                        doc_type_hint='지출'
+                    )
+                    
+                    if metadata['method'] == 'rule_based':
+                        # ✅ 규칙 기반 성공
+                        confident_items[field_name] = value
+                    else:
+                        # ⚠️ GPT 필요
+                        uncertain_items[field_name] = value
+                except Exception as e:
+                    logger.warning(f"⚠️  [PARSE ERROR] '{field_name}' 파싱 실패: {str(e)}")
+                    uncertain_items[field_name] = value
+            
+            # 📊 통계 출력
+            try:
+                stats = hybrid_parser.get_statistics()
+                logger.info(f"\n📊 [PARSING STATS]")
+                logger.info(f"   전체: {stats['total_items']}개")
+                logger.info(f"   ✅ DB 규칙 성공: {stats['db_rule_success']}개 ({stats['db_rule_rate']*100:.1f}%)")
+                logger.info(f"   ⚠️  GPT 필요: {stats['gpt_fallback']}개 ({stats['gpt_fallback_rate']*100:.1f}%)")
+                logger.info(f"   💰 비용 절감률: {stats['cost_saving_rate']*100:.1f}%")
+                logger.info(f"   🎓 새로 학습: {stats['new_keywords_learned']}개")
+            except Exception as e:
+                logger.warning(f"⚠️  통계 출력 실패: {str(e)}")
+        else:
+            # HybridParser 실패 시 모든 항목을 GPT로
+            logger.warning("⚠️  HybridParser를 사용할 수 없습니다. 모든 항목을 GPT로 처리합니다.")
+            uncertain_items = expense_items.copy()
+        
+        # ============================================
+        # GPT로 전체 재분석 (불확실한 항목 포함)
+        # ============================================
+        if uncertain_items:
+            logger.warning(f"\n⚠️  [{len(uncertain_items)}개 항목] GPT로 재분석 필요:")
+            for field in uncertain_items.keys():
+                logger.warning(f"   - {field}")
+            logger.info(f"\n🤖 [GPT PARSING] 전체 항목을 GPT로 분석합니다...")
+        else:
+            logger.info(f"\n✅ [100% DB-RULE] 모든 항목을 규칙 기반으로 처리했습니다!")
+            logger.info(f"🤖 [GPT PARSING] 정확도 향상을 위해 GPT로 카테고리 분류를 진행합니다...")
+
+
+        # 기존 GPT 프롬프트 사용
         prompt = f"""
 다음 지출 항목들을 분석하여 아래 카테고리로 정확하게 분류해줘:
 
@@ -357,6 +502,14 @@ class FinancialAnalyzerService:
                 result = json.loads(result_text)
                 # 언더스코어를 띄어쓰기로 변환
                 cleaned_result = self._clean_item_names(result)
+                
+                # 🎓 GPT 학습: 불확실했던 항목들을 DB에 저장
+                if uncertain_items:
+                    self._learn_from_gpt_expense(uncertain_items, cleaned_result)
+                
+                # ✅ GPT 분석 완료 로깅
+                logger.info(f"\n✅ [GPT COMPLETED] 지출 분류 완료")
+                logger.info(f"{'='*80}\n")
                 
                 # 🔥 캐시 저장 (24시간)
                 AICache.set_cached_response(cache_key, json.dumps(cleaned_result, ensure_ascii=False), ttl=86400)
@@ -524,3 +677,69 @@ class FinancialAnalyzerService:
             "surplus_ratio": round(surplus_ratio, 2),
             "status": "흑자" if surplus > 0 else "적자" if surplus < 0 else "수지균형"
         }
+    
+    def _learn_from_gpt_income(self, uncertain_items: Dict[str, str], gpt_result: Dict):
+        """
+        GPT가 분류한 소득 항목을 DB에 학습
+        
+        Args:
+            uncertain_items: 규칙 기반으로 처리 못한 항목들
+            gpt_result: GPT 분석 결과
+        """
+        try:
+            from documents_multi_agents.domain.service.hybrid_parser import HybridParser
+            
+            learner = HybridParser()
+            
+            # GPT 결과에서 각 항목이 어느 카테고리에 속하는지 확인
+            for field_name in uncertain_items.keys():
+                # 모든 카테고리에서 해당 항목 찾기
+                found = False
+                for category_name, items in gpt_result.items():
+                    if category_name in ['카테고리별 합계', '총소득', 'total_income', 'error', 'raw_items']:
+                        continue
+                    
+                    if isinstance(items, dict) and field_name in items:
+                        # 이 항목은 소득으로 분류됨
+                        learner.learn_from_gpt_result(field_name, 'income')
+                        found = True
+                        break
+                
+                if not found:
+                    logger.debug(f"[LEARN] 항목 '{field_name}'을 GPT 결과에서 찾을 수 없음")
+        
+        except Exception as e:
+            logger.error(f"[LEARN] 소득 학습 오류: {str(e)}")
+    
+    def _learn_from_gpt_expense(self, uncertain_items: Dict[str, str], gpt_result: Dict):
+        """
+        GPT가 분류한 지출 항목을 DB에 학습
+        
+        Args:
+            uncertain_items: 규칙 기반으로 처리 못한 항목들
+            gpt_result: GPT 분석 결과
+        """
+        try:
+            from documents_multi_agents.domain.service.hybrid_parser import HybridParser
+            
+            learner = HybridParser()
+            
+            # GPT 결과에서 각 항목이 어느 카테고리에 속하는지 확인
+            for field_name in uncertain_items.keys():
+                # 모든 카테고리에서 해당 항목 찾기
+                found = False
+                for category_name, items in gpt_result.items():
+                    if category_name in ['카테고리별 합계', '총지출', 'total_expense', 'error', 'raw_items']:
+                        continue
+                    
+                    if isinstance(items, dict) and field_name in items:
+                        # 이 항목은 지출로 분류됨
+                        learner.learn_from_gpt_result(field_name, 'expense')
+                        found = True
+                        break
+                
+                if not found:
+                    logger.debug(f"[LEARN] 항목 '{field_name}'을 GPT 결과에서 찾을 수 없음")
+        
+        except Exception as e:
+            logger.error(f"[LEARN] 지출 학습 오류: {str(e)}")

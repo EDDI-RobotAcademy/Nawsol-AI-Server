@@ -273,14 +273,25 @@ class ETFRecommendationUseCase:
 
             # 5. 프론트엔드 인터페이스에 맞게 응답 형식 변환
             if recommendation_result.get("success"):
-                # 추천된 ETF를 상위 N개로 제한 (프론트엔드 표시용)
-                recommended_etfs = etf_records[:10]  # 상위 10개 ETF
+                # 추천된 ETF를 3~10개로 제한
+                total_etfs = len(etf_records)
+                min_etfs = min(3, total_etfs)  # 최소 3개 (또는 전체 개수)
+                max_etfs = min(10, total_etfs)  # 최대 10개 (또는 전체 개수)
+                
+                # 실제로는 GPT가 추천한 ETF를 사용해야 하지만, 
+                # 현재는 상위 N개 ETF를 사용 (시가총액 기준 정렬된 상태)
+                recommended_count = max_etfs  # 최대 10개까지
+                recommended_etfs = etf_records[:recommended_count]
+                
+                # 저축률 계산
+                surplus_ratio = round(financial_data["surplus"] / financial_data["total_income"] * 100, 1) if financial_data["total_income"] > 0 else 0
 
                 return {
                     "success": True,
                     "total_income": financial_data["total_income"],
                     "total_expense": financial_data["total_expense"],
                     "available_amount": financial_data["surplus"],
+                    "surplus_ratio": surplus_ratio,
                     "recommendation_reason": recommendation_result.get("recommendation", ""),
                     "recommended_etfs": [
                         {

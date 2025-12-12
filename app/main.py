@@ -68,11 +68,90 @@ app.include_router(community_router, prefix="/community")
 app.include_router(kakao_authentication_router, prefix="/kakao-authentication")
 
 # 앱 실행
-
 if __name__ == "__main__":
     import uvicorn
+    from ieinfo.infrastructure.orm.ie_rule import IERule
+    from ieinfo.infrastructure.orm.ie_info import IEType
+    from sqlalchemy import select
+    
     host = os.getenv("APP_HOST")
     port = int(os.getenv("APP_PORT"))
+    
+    # 🔥 IE_RULE 데이터 백업 (서버 재시작해도 유지)
+    backup_rules = []
+    try:
+        with engine.connect() as conn:
+            # IE_RULE 테이블이 존재하면 데이터 백업
+            result = conn.execute(select(IERule))
+            backup_rules = [
+                {'keyword': row.keyword, 'ie_type': row.ie_type}
+                for row in result
+            ]
+            print(f"📦 IE_RULE 백업: {len(backup_rules)}개 규칙")
+    except Exception as e:
+        print(f"⚠️  IE_RULE 백업 실패 (첫 실행일 수 있음): {str(e)}")
+    
+    # 모든 테이블 삭제 및 재생성
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    
+    # 🔥 IE_RULE 데이터 복구 또는 초기 데이터 삽입
+    from sqlalchemy.orm import Session
+    session = Session(bind=engine)
+    
+    if backup_rules:
+        # 백업 데이터가 있으면 복구
+        try:
+            for rule_data in backup_rules:
+                new_rule = IERule(
+                    keyword=rule_data['keyword'],
+                    ie_type=rule_data['ie_type']
+                )
+                session.add(new_rule)
+            
+            session.commit()
+            print(f"✅ IE_RULE 복구 완료: {len(backup_rules)}개 규칙")
+        except Exception as e:
+            session.rollback()
+            print(f"❌ IE_RULE 복구 실패: {str(e)}")
+    else:
+        # 백업 데이터가 없으면 초기 데이터 자동 삽입
+        print("🎯 백업 데이터 없음 → 초기 키워드 자동 삽입")
+        
+        # 초기 소득 키워드
+        INITIAL_INCOME_KEYWORDS = [
+            "급여", "월급", "연봉", "봉급", "임금",
+            "상여", "상여금", "보너스", "성과급", "인센티브",
+            "수당", "식대", "교통비", "주거수당",
+            "이자", "배당", "배당금", "이자소득"
+        ]
+        
+        # 초기 지출 키워드
+        INITIAL_EXPENSE_KEYWORDS = [
+            "보험료", "국민연금", "건강보험", "고용보험", "산재보험",
+            "세금", "소득세", "지방소득세", "주민세",
+            "카드", "신용카드", "체크카드", "카드사용액",
+            "공제", "공제액", "차감"
+        ]
+        
+        try:
+            # 소득 키워드 삽입
+            for keyword in INITIAL_INCOME_KEYWORDS:
+                rule = IERule(keyword=keyword, ie_type=IEType.INCOME)
+                session.add(rule)
+            
+            # 지출 키워드 삽입
+            for keyword in INITIAL_EXPENSE_KEYWORDS:
+                rule = IERule(keyword=keyword, ie_type=IEType.EXPENSE)
+                session.add(rule)
+            
+            session.commit()
+            total = len(INITIAL_INCOME_KEYWORDS) + len(INITIAL_EXPENSE_KEYWORDS)
+            print(f"✅ 초기 키워드 삽입 완료: {total}개 (소득 {len(INITIAL_INCOME_KEYWORDS)}개, 지출 {len(INITIAL_EXPENSE_KEYWORDS)}개)")
+        except Exception as e:
+            session.rollback()
+            print(f"❌ 초기 키워드 삽입 실패: {str(e)}")
+    
+    session.close()
+    
     uvicorn.run(app, host=host, port=port)
