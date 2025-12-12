@@ -4,6 +4,7 @@ from config.crypto import Crypto
 from config.redis_config import get_redis
 from ieinfo.infrastructure.repository.ie_info_repository_impl import IEInfoRepositoryImpl
 from ieinfo.infrastructure.orm.ie_info import IEType
+from product.infrastructure.repository.product_repository_impl import ProductRepositoryImpl
 from recommendation.domain.service.fund_recommendation_service import FundRecommendationService
 from util.log.log import Log
 
@@ -27,6 +28,7 @@ class FundRecommendationUseCase:
     def __init__(self):
         if not hasattr(self, 'initialized'):
             self.ie_repository = IEInfoRepositoryImpl.get_instance()
+            self.product_repository = ProductRepositoryImpl.get_instance()
             self.redis_client = get_redis()
             self.crypto = Crypto.get_instance()
             self.initialized = True
