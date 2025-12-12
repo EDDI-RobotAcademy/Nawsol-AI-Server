@@ -41,7 +41,7 @@ class CardNewsRecommendationUseCase:
             self.crypto = Crypto.get_instance()
             self.initialized = True
 
-    def _get_card_news_data_from_db(self, session_id: str, year:int, month:int) -> Dict:
+    def _get_financial_data_from_db(self, session_id: str, year:int, month:int) -> Dict:
         """DB에서 자산 정보 가져오기 (로그인 사용자)"""
         try:
             # DB에서 데이터 조회
@@ -77,7 +77,7 @@ class CardNewsRecommendationUseCase:
             logger.error(f"Error loading data from DB: {str(e)}")
             return None
 
-    def _get_card_news_data_from_redis(self, session_id: str) -> Dict:
+    def _get_financial_data_from_redis(self, session_id: str) -> Dict:
         """Redis에서 자산 정보 가져오기 (비로그인 사용자)"""
         try:
             encrypted_data = self.redis_client.hgetall(session_id)
@@ -180,14 +180,14 @@ class CardNewsRecommendationUseCase:
 
             if is_logged_in and year and month:
                 # 로그인 사용자 - DB에서 조회
-                financial_data = self._get_card_news_data_from_db(session_id, year, month)
+                financial_data = self._get_financial_data_from_db(session_id, year, month)
                 if not financial_data:
                     # DB에 데이터가 없으면 Redis 시도
                     logger.warning("No data in DB, trying Redis...")
-                    financial_data = self._get_card_news_data_from_redis(session_id)
+                    financial_data = self._get_financial_data_from_redis(session_id)
             else:
                 # 비로그인 사용자 또는 연도/월 미지정 - Redis에서 조회
-                financial_data = self._get_card_news_data_from_redis(session_id)
+                financial_data = self._get_financial_data_from_redis(session_id)
 
             if not financial_data:
                 return {
@@ -195,6 +195,7 @@ class CardNewsRecommendationUseCase:
                     "message": "자산 정보를 찾을 수 없습니다. 먼저 소득/지출 데이터를 입력해주세요."
                 }
 
+            logger.debug(f"financial_data {financial_data}")
             # 3. 뉴스 관련 데이터 가져오기
             news_records = await self.news_repository.get_three_month_news_for_card_news()
             community_records = await self.community_repository.get_three_month_community_for_card_news()
